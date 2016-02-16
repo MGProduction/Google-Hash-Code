@@ -27,38 +27,38 @@ int     maxorders;
 
 typedef struct tagPROD
 {
-    int weight;
+	int weight;
 } PROD;
 PROD*prods;
 
 typedef struct tagWAREHOUSE
 {
-    int  R,C;
-    int  tot;
-    int* prodcnt;
+	int  R,C;
+	int  tot;
+	int* prodcnt;
 } WARE;
 WARE*wares;
 
 typedef struct tagORDER
 {
-    int  id;
-    int  R,C;
-    int  time;
-    int  tot,ltot;
-    int* prodcnt;
-    int* recprodcnt;
+	int  id;
+	int  R,C;
+	int  time;
+	int  tot,ltot;
+	int* prodcnt;
+	int* recprodcnt;
 } ORDER;
 ORDER*orders;
 
 typedef struct tagDRONE
 {
-    int  payload;
-    int  R,C;
-    int  warehouseID;
-    int  action;
-    int  time;
-    int  orderID[MAXORDERS];
-    int* prodcnt[MAXORDERS];
+	int  payload;
+	int  R,C;
+	int  warehouseID;
+	int  action;
+	int  time;
+	int  orderID[MAXORDERS];
+	int* prodcnt[MAXORDERS];
 } DRONE;
 DRONE*drones;
 
@@ -69,32 +69,32 @@ DRONE*drones;
 
 typedef struct tagInts
 {
-    int*Items;
-    int cItems,mItems;
+	int*Items;
+	int cItems,mItems;
 } Ints;
 
 void Ints_new(Ints*i)
 {
-    i->cItems=0;
-    i->mItems=256;
-    i->Items=(int*)calloc(i->mItems,sizeof(int));
+	i->cItems=0;
+	i->mItems=256;
+	i->Items=(int*)calloc(i->mItems,sizeof(int));
 }
 
 int Ints_push(Ints*i,int value)
 {
-    if(i->cItems+1>=i->mItems)
-    {
-        i->mItems+=256;
-        i->Items=(int*)realloc(i->Items,i->mItems*sizeof(int));
-    }
-    i->Items[i->cItems++]=value;
-    return i->cItems-1;
+	if(i->cItems+1>=i->mItems)
+	{
+		i->mItems+=256;
+		i->Items=(int*)realloc(i->Items,i->mItems*sizeof(int));
+	}
+	i->Items[i->cItems++]=value;
+	return i->cItems-1;
 }
 
 void Ints_delete(Ints*i)
 {
-    free(i->Items);
-    i->cItems=i->mItems=0;
+	free(i->Items);
+	i->cItems=i->mItems=0;
 }
 
 // ---------------------------------------------------------------------------
@@ -119,31 +119,31 @@ Ints*dcmd;  // output buffer
 
 void addcmd_deliver(int droneID,int orderID,int productID,int delivercnt)
 {
-    Ints_push(&dcmd[droneID],droneID);
-    Ints_push(&dcmd[droneID],'D');
-    Ints_push(&dcmd[droneID],orderID);
-    Ints_push(&dcmd[droneID],productID);
-    Ints_push(&dcmd[droneID],delivercnt);
+	Ints_push(&dcmd[droneID],droneID);
+	Ints_push(&dcmd[droneID],'D');
+	Ints_push(&dcmd[droneID],orderID);
+	Ints_push(&dcmd[droneID],productID);
+	Ints_push(&dcmd[droneID],delivercnt);
 }
 
 int addcmd_load(int droneID,int warehouseID,int productID,int add)
 {
-    int idx=dcmd[droneID].cItems;
-    while((idx>4)&&(dcmd[droneID].Items[idx-4]=='L')&&(dcmd[droneID].Items[idx-3]==warehouseID))
-    {
-        if(dcmd[droneID].Items[idx-2]==productID)
-        {
-            dcmd[droneID].Items[idx-1]+=add;
-            return 0;
-        }
-        idx-=5;
-    }
-    Ints_push(&dcmd[droneID],droneID);
-    Ints_push(&dcmd[droneID],'L');
-    Ints_push(&dcmd[droneID],warehouseID);
-    Ints_push(&dcmd[droneID],productID);
-    Ints_push(&dcmd[droneID],add);
-    return 1;
+	int idx=dcmd[droneID].cItems;
+	while((idx>4)&&(dcmd[droneID].Items[idx-4]=='L')&&(dcmd[droneID].Items[idx-3]==warehouseID))
+	{
+		if(dcmd[droneID].Items[idx-2]==productID)
+		{
+			dcmd[droneID].Items[idx-1]+=add;
+			return 0;
+		}
+		idx-=5;
+	}
+	Ints_push(&dcmd[droneID],droneID);
+	Ints_push(&dcmd[droneID],'L');
+	Ints_push(&dcmd[droneID],warehouseID);
+	Ints_push(&dcmd[droneID],productID);
+	Ints_push(&dcmd[droneID],add);
+	return 1;
 }
 
 // ---------------------------------------------------------------------------
@@ -152,105 +152,105 @@ int addcmd_load(int droneID,int warehouseID,int productID,int add)
 
 int movecost(int R1,int C1,int R2,int C2)
 {
-    return (int)ceil(sqrt((double)((R1-R2)*(R1-R2)+(C1-C2)*(C1-C2))));
+	return (int)ceil(sqrt((double)((R1-R2)*(R1-R2)+(C1-C2)*(C1-C2))));
 }
 
 int WO_movecost(int ware,int order)
 {
-    if(_cost[ware][order]==0) _cost[ware][order]=movecost(wares[ware].R,wares[ware].C,orders[order].R,orders[order].C);
-    return _cost[ware][order];
+	if(_cost[ware][order]==0) _cost[ware][order]=movecost(wares[ware].R,wares[ware].C,orders[order].R,orders[order].C);
+	return _cost[ware][order];
 }
 
 int match(ORDER*O,WARE*W,int*cnt,int*weight)
 {
-    int i,good=0,goodW=0,bad=0,c=0;
-    if(O->ltot)
-        for(i=0; i<P; i++)
-            if((W->prodcnt[i]>=O->prodcnt[i])&&O->prodcnt[i])
-            {
-                goodW+=O->prodcnt[i]*prods[i].weight;
-                good+=O->prodcnt[i];
-                c++;
-            }
-            else
-                bad++;
-    if(cnt) *cnt=c;
-    if(weight) *weight=goodW;
-    return good;
+	int i,good=0,goodW=0,bad=0,c=0;
+	if(O->ltot)
+	for(i=0; i<P; i++)
+	if((W->prodcnt[i]>=O->prodcnt[i])&&O->prodcnt[i])
+	{
+		goodW+=O->prodcnt[i]*prods[i].weight;
+		good+=O->prodcnt[i];
+		c++;
+	}
+	else
+	bad++;
+	if(cnt) *cnt=c;
+	if(weight) *weight=goodW;
+	return good;
 }
 
 int order_compare_zero(const void*a,const void*b)
 {
-    ORDER*A=(ORDER*)a;
-    ORDER*B=(ORDER*)b;
-    int   i=0,val,costA=0x7FFFFFFF,costB=0x7FFFFFFF;
-    if(val=match(A,&wares[i],NULL,NULL))
-        costA=movecost(wares[i].R,wares[i].C,A->R,A->C)+val*val;
-    if(val=match(B,&wares[i],NULL,NULL))
-        costB=movecost(wares[i].R,wares[i].C,B->R,B->C)+val*val;
-    return costA-costB;
+	ORDER*A=(ORDER*)a;
+	ORDER*B=(ORDER*)b;
+	int   i=0,val,costA=0x7FFFFFFF,costB=0x7FFFFFFF;
+	if(val=match(A,&wares[i],NULL,NULL))
+	costA=movecost(wares[i].R,wares[i].C,A->R,A->C)+val*val;
+	if(val=match(B,&wares[i],NULL,NULL))
+	costB=movecost(wares[i].R,wares[i].C,B->R,B->C)+val*val;
+	return costA-costB;
 }
 
 int wid_compare(const void*a,const void*b)
 {
-    int*A=(int*)a;
-    int*B=(int*)b;
-    return A[1]-B[1];
+	int*A=(int*)a;
+	int*B=(int*)b;
+	return A[1]-B[1];
 }
 
 int WD_nearestcost(int ware,int needed)
 {
-    int R=wares[ware].R,C=wares[ware].C,best=R*C;
-    int d;
-    for(d=0; (d<D)&&(best!=0); d++)
-        if((drones[d].action!=action_stop)&&(drones[d].payload+needed<=MAXP))
-        {
-            int cost=movecost(R,C,drones[d].R,drones[d].C);
-            if(cost<best)
-                best=cost;
-        }
-    return best;
+	int R=wares[ware].R,C=wares[ware].C,best=R*C;
+	int d;
+	for(d=0; (d<D)&&(best!=0); d++)
+	if((drones[d].action!=action_stop)&&(drones[d].payload+needed<=MAXP))
+	{
+		int cost=movecost(R,C,drones[d].R,drones[d].C);
+		if(cost<best)
+		best=cost;
+	}
+	return best;
 }
 
 int checkdronetimes()
 {
-    int d,good=0;
-    for(d=0; d<D; d++)
-        if(drones[d].time<MAXT)
-            good++;
-        else
-            drones[d].action=action_stop;
-    return good;
+	int d,good=0;
+	for(d=0; d<D; d++)
+	if(drones[d].time<MAXT)
+	good++;
+	else
+	drones[d].action=action_stop;
+	return good;
 }
 
 int checkordertoprocess()
 {
-    int o,cnt=0;
-    for(o=0; o<O; o++)
-        if(orders[o].tot)
-            cnt++;
-    o=0;
-    return cnt;
+	int o,cnt=0;
+	for(o=0; o<O; o++)
+	if(orders[o].tot)
+	cnt++;
+	o=0;
+	return cnt;
 }
 
 int ordercomplete(DRONE*drone,int orderID)
 {
-    SCORE+=(int)ceil((((float)MAXT-(float)orders[orderID].time)/(float)MAXT)*100.0f);
-    return SCORE;
+	SCORE+=(int)ceil((((float)MAXT-(float)orders[orderID].time)/(float)MAXT)*100.0f);
+	return SCORE;
 }
 
 int canaddordertodrone(DRONE*d,int warehouseID,int orderID,int full)
 {
-    int f;
-    for(f=0; f<maxorders; f++)
-        if(d->orderID[f]==orderID)
-            return 1;
-        else if(d->orderID[f]==-1)
-            if(f&&full)
-                return 0;
-            else
-                return 1;
-    return 0;
+	int f;
+	for(f=0; f<maxorders; f++)
+	if(d->orderID[f]==orderID)
+	return 1;
+	else if(d->orderID[f]==-1)
+	if(f&&full)
+	return 0;
+	else
+	return 1;
+	return 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -259,134 +259,134 @@ int canaddordertodrone(DRONE*d,int warehouseID,int orderID,int full)
 
 int readinput(const char*filename)
 {
-    FILE*f=fopen(filename,"rb");
-    if(f)
-    {
-        int i,j;
+	FILE*f=fopen(filename,"rb");
+	if(f)
+	{
+		int i,j;
 
-        SCORE=0;
+		SCORE=0;
 
-        fscanf(f,"%d %d %d %d %d\n",&R,&C,&D,&MAXT,&MAXP);
-        // products
-        fscanf(f,"%d\n",&P);
-        prods=(PROD*)calloc(P,sizeof(PROD));
-        for(i=0; i<P; i++)
-            fscanf(f,"%d",&prods[i].weight);
+		fscanf(f,"%d %d %d %d %d\n",&R,&C,&D,&MAXT,&MAXP);
+		// products
+		fscanf(f,"%d\n",&P);
+		prods=(PROD*)calloc(P,sizeof(PROD));
+		for(i=0; i<P; i++)
+		fscanf(f,"%d",&prods[i].weight);
 
-        fscanf(f,"\n");
-        // warehouse
-        fscanf(f,"%d\n",&W);
-        wares=(WARE*)calloc(W,sizeof(WARE));
-        for(i=0; i<W; i++)
-        {
-            fscanf(f,"%d %d\n",&wares[i].R,&wares[i].C);
-            wares[i].prodcnt=(int*)calloc(P,sizeof(int));
-            for(j=0; j<P; j++)
-            {
-                fscanf(f,"%d",&wares[i].prodcnt[j]);
-                wares[i].tot+=wares[i].prodcnt[j];
-            }
-            fscanf(f,"\n");
-        }
-        fscanf(f,"\n");
+		fscanf(f,"\n");
+		// warehouse
+		fscanf(f,"%d\n",&W);
+		wares=(WARE*)calloc(W,sizeof(WARE));
+		for(i=0; i<W; i++)
+		{
+			fscanf(f,"%d %d\n",&wares[i].R,&wares[i].C);
+			wares[i].prodcnt=(int*)calloc(P,sizeof(int));
+			for(j=0; j<P; j++)
+			{
+				fscanf(f,"%d",&wares[i].prodcnt[j]);
+				wares[i].tot+=wares[i].prodcnt[j];
+			}
+			fscanf(f,"\n");
+		}
+		fscanf(f,"\n");
 
-        maxorders=MIN(MAXORDERS,W);
-        // orders
-        fscanf(f,"%d\n",&O);
-        orders=(ORDER*)calloc(O,sizeof(ORDER));
-        for(i=0; i<O; i++)
-        {
-            fscanf(f,"%d %d\n",&orders[i].R,&orders[i].C);
-            fscanf(f,"%d\n",&orders[i].tot);
-            orders[i].ltot=orders[i].tot;
-            orders[i].id=i;
-            orders[i].prodcnt=(int*)calloc(P,sizeof(int));
-            orders[i].recprodcnt=(int*)calloc(P,sizeof(int));
-            for(j=0; j<orders[i].tot; j++)
-            {
-                int item;
-                fscanf(f,"%d",&item);
-                orders[i].prodcnt[item]++;
-                orders[i].recprodcnt[item]++;
-            }
-            fscanf(f,"\n");
-        }
-        qsort(orders,O,sizeof(ORDER),order_compare_zero);
+		maxorders=MIN(MAXORDERS,W);
+		// orders
+		fscanf(f,"%d\n",&O);
+		orders=(ORDER*)calloc(O,sizeof(ORDER));
+		for(i=0; i<O; i++)
+		{
+			fscanf(f,"%d %d\n",&orders[i].R,&orders[i].C);
+			fscanf(f,"%d\n",&orders[i].tot);
+			orders[i].ltot=orders[i].tot;
+			orders[i].id=i;
+			orders[i].prodcnt=(int*)calloc(P,sizeof(int));
+			orders[i].recprodcnt=(int*)calloc(P,sizeof(int));
+			for(j=0; j<orders[i].tot; j++)
+			{
+				int item;
+				fscanf(f,"%d",&item);
+				orders[i].prodcnt[item]++;
+				orders[i].recprodcnt[item]++;
+			}
+			fscanf(f,"\n");
+		}
+		qsort(orders,O,sizeof(ORDER),order_compare_zero);
 
-        fscanf(f,"\n");
-        drones=(DRONE*)calloc(D,sizeof(DRONE));
-        dcmd=(Ints*)calloc(D,sizeof(Ints));
-        for(i=0; i<D; i++)
-        {
-            int f;
-            drones[i].action=action_none;
-            drones[i].warehouseID=-1;
-            for(f=0; f<maxorders; f++)
-            {
-                drones[i].orderID[f]=-1;
-                drones[i].prodcnt[f]=(int*)calloc(P,sizeof(int));
-            }
-            if(W==1)
-                drones[i].warehouseID=0;
-            drones[i].R=wares[drones[i].warehouseID].R;
-            drones[i].C=wares[drones[i].warehouseID].C;
-            Ints_new(&dcmd[i]);
-        }
-        fclose(f);
+		fscanf(f,"\n");
+		drones=(DRONE*)calloc(D,sizeof(DRONE));
+		dcmd=(Ints*)calloc(D,sizeof(Ints));
+		for(i=0; i<D; i++)
+		{
+			int f;
+			drones[i].action=action_none;
+			drones[i].warehouseID=-1;
+			for(f=0; f<maxorders; f++)
+			{
+				drones[i].orderID[f]=-1;
+				drones[i].prodcnt[f]=(int*)calloc(P,sizeof(int));
+			}
+			if(W==1)
+			drones[i].warehouseID=0;
+			drones[i].R=wares[drones[i].warehouseID].R;
+			drones[i].C=wares[drones[i].warehouseID].C;
+			Ints_new(&dcmd[i]);
+		}
+		fclose(f);
 
-        _cost=(int**)calloc(W,sizeof(int*));
-        for(i=0; i<W; i++)
-            _cost[i]=(int*)calloc(O,sizeof(int));
-        return 1;
-    }
-    else
-        return 0;
+		_cost=(int**)calloc(W,sizeof(int*));
+		for(i=0; i<W; i++)
+		_cost[i]=(int*)calloc(O,sizeof(int));
+		return 1;
+	}
+	else
+	return 0;
 }
 
 void freedata()
 {
-    int i,j;
-    for(i=0; i<D; i++)
-    {
-        for(j=0; j<maxorders; j++)
-            free(drones[i].prodcnt[j]);
-        Ints_delete(&dcmd[i]);
-    }
-    free(dcmd);
-    free(drones);
-    for(i=0; i<W; i++)
-    {
-        free(wares[i].prodcnt);
-        free(_cost[i]);
-    }
-    free(wares);
-    free(_cost);
-    for(i=0; i<O; i++)
-        free(orders[i].prodcnt);
-    free(orders);
-    free(prods);
+	int i,j;
+	for(i=0; i<D; i++)
+	{
+		for(j=0; j<maxorders; j++)
+		free(drones[i].prodcnt[j]);
+		Ints_delete(&dcmd[i]);
+	}
+	free(dcmd);
+	free(drones);
+	for(i=0; i<W; i++)
+	{
+		free(wares[i].prodcnt);
+		free(_cost[i]);
+	}
+	free(wares);
+	free(_cost);
+	for(i=0; i<O; i++)
+	free(orders[i].prodcnt);
+	free(orders);
+	free(prods);
 }
 
 int writeoutput(const char*filename)
 {
-    FILE*f=fopen(filename,"wb");
-    if(f)
-    {
-        int d,cmds=0;
-        for(d=0; d<D; d++)
-            cmds+=dcmd[d].cItems/5;
-        fprintf(f,"%d\n",cmds);
-        for(d=0; d<D; d++)
-        {
-            int i;
-            for(i=0; i<dcmd[d].cItems; i+=5)
-                fprintf(f,"%d %c %d %d %d\n",dcmd[d].Items[i],dcmd[d].Items[i+1],dcmd[d].Items[i+2],dcmd[d].Items[i+3],dcmd[d].Items[i+4]);
-        }
-        fclose(f);
-        return 1;
-    }
-    else
-        return 0;
+	FILE*f=fopen(filename,"wb");
+	if(f)
+	{
+		int d,cmds=0;
+		for(d=0; d<D; d++)
+		cmds+=dcmd[d].cItems/5;
+		fprintf(f,"%d\n",cmds);
+		for(d=0; d<D; d++)
+		{
+			int i;
+			for(i=0; i<dcmd[d].cItems; i+=5)
+			fprintf(f,"%d %c %d %d %d\n",dcmd[d].Items[i],dcmd[d].Items[i+1],dcmd[d].Items[i+2],dcmd[d].Items[i+3],dcmd[d].Items[i+4]);
+		}
+		fclose(f);
+		return 1;
+	}
+	else
+	return 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -394,81 +394,81 @@ int writeoutput(const char*filename)
 // ---------------------------------------------------------------------------
 int addtodrone(int orderID,int productID,int warehouseID,int add,int act)
 {
-    int i,r,best=-1,besti=-1,bestused=-1;
-    for(r=0; (r<2)&&(besti==-1); r++)
-        for(i=0; i<D; i++)
-            if((drones[i].action==action_none)||(drones[i].action==action_loaded))
-                if(
-                    ((r==0)&&((drones[i].warehouseID==warehouseID)||((drones[i].R==wares[warehouseID].R)&&(drones[i].C==wares[warehouseID].C))))||
-                    ((r==1)&&(drones[i].warehouseID==-1))
-                )
-                    if(canaddordertodrone(&drones[i],warehouseID,orderID,r))
-                    {
-                        int used=0,score=0;
-                        while((drones[i].payload+prods[productID].weight*(used+1)<=MAXP)&&(used<add))
-                            used++;
-                        if(used)
-                        {
-                            int f,dist,distO;
-                            for(f=0; f<maxorders; f++)
-                                if(drones[i].orderID[f]==orderID)
-                                {
-                                    score+=R*C;
-                                    break;
-                                }
-                            score+=used+used*(add==used);
-                            dist=(R*C-movecost(drones[i].R,drones[i].C,wares[warehouseID].R,wares[warehouseID].C));
-                            distO=WO_movecost(warehouseID,orderID);
-                            for(f=0; f<maxorders; f++)
-                                if(drones[i].orderID[f]!=-1)
-                                {
-                                    int distM=movecost(orders[drones[i].orderID[f]].R,orders[drones[i].orderID[f]].R,orders[orderID].R,orders[orderID].C);
-                                    if(distM<distO)
-                                        distO=distM;
-                                }
-                            score+=dist+(R*C-distO);
-                            if(score>best)
-                            {
-                                best=score;
-                                besti=i;
-                                bestused=used;
-                            }
-                        }
-                    }
-    if(besti!=-1)
-    {
-        int f,used=bestused,i=besti;
-        if(act)
-        {
-            int time=movecost(drones[i].R,drones[i].C,
-                              wares[warehouseID].R,wares[warehouseID].C);
-            if((drones[i].R==wares[warehouseID].R)&&(drones[i].C==wares[warehouseID].C))
-                time=0;
-            else
-            {
-                drones[i].time+=time;
-                drones[i].R=wares[warehouseID].R;
-                drones[i].C=wares[warehouseID].C;
-            }
-            drones[i].warehouseID=warehouseID;
-            for(f=0; f<maxorders; f++)
-                if((drones[i].orderID[f]==-1)||(drones[i].orderID[f]==orderID))
-                {
-                    drones[i].orderID[f]=orderID;
-                    drones[i].prodcnt[f][productID]+=used;
-                    break;
-                }
-            if(f==maxorders)
-                f=0;
-            drones[i].payload+=prods[productID].weight*used;
-            drones[i].action=action_loaded;
+	int i,r,best=-1,besti=-1,bestused=-1;
+	for(r=0; (r<2)&&(besti==-1); r++)
+	for(i=0; i<D; i++)
+	if((drones[i].action==action_none)||(drones[i].action==action_loaded))
+	if(
+			((r==0)&&((drones[i].warehouseID==warehouseID)||((drones[i].R==wares[warehouseID].R)&&(drones[i].C==wares[warehouseID].C))))||
+			((r==1)&&(drones[i].warehouseID==-1))
+			)
+	if(canaddordertodrone(&drones[i],warehouseID,orderID,r))
+	{
+		int used=0,score=0;
+		while((drones[i].payload+prods[productID].weight*(used+1)<=MAXP)&&(used<add))
+		used++;
+		if(used)
+		{
+			int f,dist,distO;
+			for(f=0; f<maxorders; f++)
+			if(drones[i].orderID[f]==orderID)
+			{
+				score+=R*C;
+				break;
+			}
+			score+=used+used*(add==used);
+			dist=(R*C-movecost(drones[i].R,drones[i].C,wares[warehouseID].R,wares[warehouseID].C));
+			distO=WO_movecost(warehouseID,orderID);
+			for(f=0; f<maxorders; f++)
+			if(drones[i].orderID[f]!=-1)
+			{
+				int distM=movecost(orders[drones[i].orderID[f]].R,orders[drones[i].orderID[f]].R,orders[orderID].R,orders[orderID].C);
+				if(distM<distO)
+				distO=distM;
+			}
+			score+=dist+(R*C-distO);
+			if(score>best)
+			{
+				best=score;
+				besti=i;
+				bestused=used;
+			}
+		}
+	}
+	if(besti!=-1)
+	{
+		int f,used=bestused,i=besti;
+		if(act)
+		{
+			int time=movecost(drones[i].R,drones[i].C,
+			wares[warehouseID].R,wares[warehouseID].C);
+			if((drones[i].R==wares[warehouseID].R)&&(drones[i].C==wares[warehouseID].C))
+			time=0;
+			else
+			{
+				drones[i].time+=time;
+				drones[i].R=wares[warehouseID].R;
+				drones[i].C=wares[warehouseID].C;
+			}
+			drones[i].warehouseID=warehouseID;
+			for(f=0; f<maxorders; f++)
+			if((drones[i].orderID[f]==-1)||(drones[i].orderID[f]==orderID))
+			{
+				drones[i].orderID[f]=orderID;
+				drones[i].prodcnt[f][productID]+=used;
+				break;
+			}
+			if(f==maxorders)
+			f=0;
+			drones[i].payload+=prods[productID].weight*used;
+			drones[i].action=action_loaded;
 
-            drones[i].time+=addcmd_load(i,warehouseID,productID,used);
-        }
-        return used;
-    }
+			drones[i].time+=addcmd_load(i,warehouseID,productID,used);
+		}
+		return used;
+	}
 
-    return 0;
+	return 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -476,44 +476,44 @@ int addtodrone(int orderID,int productID,int warehouseID,int add,int act)
 // ---------------------------------------------------------------------------
 int addrequest(int orderID,int productID,int hm,int act)
 {
-    int w,rused=0,used,wx;
-    int*wid=(int*)calloc(W,sizeof(int)*2);
-    for(wx=w=0; (w<W)&&hm; w++)
-        if(wares[w].prodcnt[productID])
-        {
-            wid[wx*2]=w;
-            wid[wx*2+1]=WO_movecost(w,orderID)+WD_nearestcost(w,hm*prods[productID].weight);
-            wx++;
-        }
-    if(wx>1)
-        qsort(wid,wx,sizeof(int)*2,wid_compare);
-    for(w=0; (w<wx)&&hm; w++)
-    {
-        int ww=wid[w*2];
-        while(1)
-        {
-            if(used=addtodrone(orderID,productID,ww,MIN(wares[ww].prodcnt[productID],hm),act))
-            {
-                if(act)
-                {
-                    wares[ww].prodcnt[productID]-=used;
-                    wares[ww].tot-=used;
-                    orders[orderID].prodcnt[productID]-=used;
-                    orders[orderID].ltot-=used;
-                }
-                hm-=used;
-                rused+=used;
-            }
-            if(maxorders>1)
-                break;
-            else if(used&&hm)
-                continue;
-            else
-                break;
-        }
-    }
-    free(wid);
-    return rused;
+	int w,rused=0,used,wx;
+	int*wid=(int*)calloc(W,sizeof(int)*2);
+	for(wx=w=0; (w<W)&&hm; w++)
+	if(wares[w].prodcnt[productID])
+	{
+		wid[wx*2]=w;
+		wid[wx*2+1]=WO_movecost(w,orderID)+WD_nearestcost(w,hm*prods[productID].weight);
+		wx++;
+	}
+	if(wx>1)
+	qsort(wid,wx,sizeof(int)*2,wid_compare);
+	for(w=0; (w<wx)&&hm; w++)
+	{
+		int ww=wid[w*2];
+		while(1)
+		{
+			if(used=addtodrone(orderID,productID,ww,MIN(wares[ww].prodcnt[productID],hm),act))
+			{
+				if(act)
+				{
+					wares[ww].prodcnt[productID]-=used;
+					wares[ww].tot-=used;
+					orders[orderID].prodcnt[productID]-=used;
+					orders[orderID].ltot-=used;
+				}
+				hm-=used;
+				rused+=used;
+			}
+			if(maxorders>1)
+			break;
+			else if(used&&hm)
+			continue;
+			else
+			break;
+		}
+	}
+	free(wid);
+	return rused;
 }
 
 // ---------------------------------------------------------------------------
@@ -521,61 +521,61 @@ int addrequest(int orderID,int productID,int hm,int act)
 // ---------------------------------------------------------------------------
 int dronedeliver(int droneID)
 {
-    DRONE*drone=&drones[droneID];
-    int   f,done=0,got=0;
-    int  *wid=(int*)calloc(maxorders,sizeof(int)*2),w,wx;
-    while(1)
-    {
-        for(wx=f=0; f<maxorders; f++)
-            if((drone->orderID[f]!=-1)&&(orders[drone->orderID[f]].tot))
-            {
-                wid[wx*2]=f;
-                wid[wx*2+1]=movecost(drone->R,drone->C,orders[drone->orderID[f]].R,orders[drone->orderID[f]].C);
-                wx++;
-            }
+	DRONE*drone=&drones[droneID];
+	int   f,done=0,got=0;
+	int  *wid=(int*)calloc(maxorders,sizeof(int)*2),w,wx;
+	while(1)
+	{
+		for(wx=f=0; f<maxorders; f++)
+		if((drone->orderID[f]!=-1)&&(orders[drone->orderID[f]].tot))
+		{
+			wid[wx*2]=f;
+			wid[wx*2+1]=movecost(drone->R,drone->C,orders[drone->orderID[f]].R,orders[drone->orderID[f]].C);
+			wx++;
+		}
 
-        if(wx)
-        {
-            if(wx>1)
-                qsort(wid,wx,sizeof(int)*2,wid_compare);
-            for(w=0; w<wx; w++)
-            {
-                f=wid[w*2];
-                if((drone->orderID[f]!=-1)&&(orders[drone->orderID[f]].tot))
-                {
-                    int   i,time=movecost(drone->R,drone->C,
-                                          orders[drone->orderID[f]].R,orders[drone->orderID[f]].C);
-                    drone->time+=time;
-                    for(i=0; i<P; i++)
-                        if(orders[drone->orderID[f]].recprodcnt[i])
-                            if(drone->prodcnt[f][i])
-                            {
-                                int deliver=MIN(orders[drone->orderID[f]].recprodcnt[i],drone->prodcnt[f][i]);
-                                orders[drone->orderID[f]].recprodcnt[i]-=deliver;
-                                orders[drone->orderID[f]].tot-=deliver;
-                                drone->prodcnt[f][i]-=deliver;
-                                drone->payload-=deliver*prods[i].weight;
-                                drone->time+=1;
-                                addcmd_deliver(droneID,orders[drone->orderID[f]].id,i,deliver);
-                            }
-                    drone->R=orders[drone->orderID[f]].R;
-                    drone->C=orders[drone->orderID[f]].C;
-                    drone->action=action_none;
-                    orders[drone->orderID[f]].time=MAX(orders[drone->orderID[f]].time,drone->time);
-                    if(orders[drone->orderID[f]].tot==0)
-                        ordercomplete(drone,drone->orderID[f]);
-                    drone->orderID[f]=drone->warehouseID=-1;
-                    done++;
-                    if(f)
-                        got++;
-                }
-            }
-        }
-        else
-            break;
-    }
-    free(wid);
-    return done;
+		if(wx)
+		{
+			if(wx>1)
+			qsort(wid,wx,sizeof(int)*2,wid_compare);
+			for(w=0; w<wx; w++)
+			{
+				f=wid[w*2];
+				if((drone->orderID[f]!=-1)&&(orders[drone->orderID[f]].tot))
+				{
+					int   i,time=movecost(drone->R,drone->C,
+					orders[drone->orderID[f]].R,orders[drone->orderID[f]].C);
+					drone->time+=time;
+					for(i=0; i<P; i++)
+					if(orders[drone->orderID[f]].recprodcnt[i])
+					if(drone->prodcnt[f][i])
+					{
+						int deliver=MIN(orders[drone->orderID[f]].recprodcnt[i],drone->prodcnt[f][i]);
+						orders[drone->orderID[f]].recprodcnt[i]-=deliver;
+						orders[drone->orderID[f]].tot-=deliver;
+						drone->prodcnt[f][i]-=deliver;
+						drone->payload-=deliver*prods[i].weight;
+						drone->time+=1;
+						addcmd_deliver(droneID,orders[drone->orderID[f]].id,i,deliver);
+					}
+					drone->R=orders[drone->orderID[f]].R;
+					drone->C=orders[drone->orderID[f]].C;
+					drone->action=action_none;
+					orders[drone->orderID[f]].time=MAX(orders[drone->orderID[f]].time,drone->time);
+					if(orders[drone->orderID[f]].tot==0)
+					ordercomplete(drone,drone->orderID[f]);
+					drone->orderID[f]=drone->warehouseID=-1;
+					done++;
+					if(f)
+					got++;
+				}
+			}
+		}
+		else
+		break;
+	}
+	free(wid);
+	return done;
 }
 
 // ---------------------------------------------------------------------------
@@ -583,83 +583,83 @@ int dronedeliver(int droneID)
 // ---------------------------------------------------------------------------
 int getbestorder(char*already,int*isbest,int way,int queue)
 {
-    int d,i,o,besto=-1,bestA=0x7FFFFFFF,best__=0,notavail=0,minp=0x7FFFFFFF;
-    int*t;
+	int d,i,o,besto=-1,bestA=0x7FFFFFFF,best__=0,notavail=0,minp=0x7FFFFFFF;
+	int*t;
 
-    for(o=0; o<O; o++)
-        if(already[o]==0)
-            for(i=0; i<P; i++)
-                if(orders[o].prodcnt[i])
-                    if(prods[i].weight<minp)
-                        minp=prods[i].weight*orders[o].prodcnt[i];
+	for(o=0; o<O; o++)
+	if(already[o]==0)
+	for(i=0; i<P; i++)
+	if(orders[o].prodcnt[i])
+	if(prods[i].weight<minp)
+	minp=prods[i].weight*orders[o].prodcnt[i];
 
-    if(way==0)
-    {
-        for(d=0; (d<D); d++)
-            if((drones[d].action==action_stop)||(drones[d].payload+minp>MAXP))
-                notavail++;
+	if(way==0)
+	{
+		for(d=0; (d<D); d++)
+		if((drones[d].action==action_stop)||(drones[d].payload+minp>MAXP))
+		notavail++;
 
-        if(notavail>=MAX(maxorders,3))
-            return -1;
-    }
+		if(notavail>=MAX(maxorders,3))
+		return -1;
+	}
 
-    t=(int*)calloc(W,sizeof(int));
-    for(i=0; i<W; i++)
-        t[i]=WD_nearestcost(i,minp);
-    for(o=0; o<O; o++)
-        if(already[o]==0)
-        {
-            if(way==0)
-            {
-                besto=o;
-                break;
-            }
-            int i,costA=0x7FFFFFFF,best_=0;
-            for(i=0; i<W; i++)
-            {
-                int   val,weight,cnt;
-                ORDER*A=&orders[o];
-                if(val=match(A,&wares[i],&cnt,&weight))
-                {
-                    int cost,best=0;
-                    if(queue==1)
-                        cost=WO_movecost(i,o)+cnt;
-                    else
-                        cost=(R*C-WO_movecost(i,o))+cnt;
-                    if(t[i])
-                        if(queue==1)
-                            cost+=t[i];
-                        else
-                            cost+=(R*C-t[i]);
-                    if(queue==1)
-                        if((val==A->ltot)&&(t[i]==0))
-                        {
-                            cost=cost/(cnt+weight);
-                            best=1;
-                        }
-                        else
-                            cost+=weight;
-                    else
-                        cost+=weight;
+	t=(int*)calloc(W,sizeof(int));
+	for(i=0; i<W; i++)
+	t[i]=WD_nearestcost(i,minp);
+	for(o=0; o<O; o++)
+	if(already[o]==0)
+	{
+		if(way==0)
+		{
+			besto=o;
+			break;
+		}
+		int i,costA=0x7FFFFFFF,best_=0;
+		for(i=0; i<W; i++)
+		{
+			int   val,weight,cnt;
+			ORDER*A=&orders[o];
+			if(val=match(A,&wares[i],&cnt,&weight))
+			{
+				int cost,best=0;
+				if(queue==1)
+				cost=WO_movecost(i,o)+cnt;
+				else
+				cost=(R*C-WO_movecost(i,o))+cnt;
+				if(t[i])
+				if(queue==1)
+				cost+=t[i];
+				else
+				cost+=(R*C-t[i]);
+				if(queue==1)
+				if((val==A->ltot)&&(t[i]==0))
+				{
+					cost=cost/(cnt+weight);
+					best=1;
+				}
+				else
+				cost+=weight;
+				else
+				cost+=weight;
 
-                    if(cost<costA)
-                    {
-                        costA=cost;
-                        best_=best;
-                    }
-                }
-            }
-            if(costA<bestA)
-            {
-                bestA=costA;
-                best__=best_;
-                besto=o;
-            }
-        }
-    free(t);
-    if(isbest)
-        *isbest=best__;
-    return besto;
+				if(cost<costA)
+				{
+					costA=cost;
+					best_=best;
+				}
+			}
+		}
+		if(costA<bestA)
+		{
+			bestA=costA;
+			best__=best_;
+			besto=o;
+		}
+	}
+	free(t);
+	if(isbest)
+	*isbest=best__;
+	return besto;
 }
 
 // ---------------------------------------------------------------------------
@@ -668,89 +668,89 @@ int getbestorder(char*already,int*isbest,int way,int queue)
 
 int execute(const char*input,const char*output)
 {
-    int  d,t=0,activedrones=0,activeorders=0,way=0,round=0;
-    char*already;
+	int  d,t=0,activedrones=0,activeorders=0,way=0,round=0;
+	char*already;
 
-    if(!readinput(input))
-    {
-        printf("can't read %s\n",input);
-        return -1;
-    }
+	if(!readinput(input))
+	{
+		printf("can't read %s\n",input);
+		return -1;
+	}
 
-    printf("%s [%d x %d]\n",input,R,C);
-    printf("%d warehouses - %d products - %d orders - %d drones (max p: %d)\n",W,P,O,D,MAXP);
+	printf("%s [%d x %d]\n",input,R,C);
+	printf("%d warehouses - %d products - %d orders - %d drones (max p: %d)\n",W,P,O,D,MAXP);
 
-    already=(char*)calloc(O,sizeof(char));
+	already=(char*)calloc(O,sizeof(char));
 
-    while((activedrones=checkdronetimes())&&(activeorders=checkordertoprocess()))
-    {
-        int sum=0,o=0;
-        printf("active drones: %d - active orders: %d/%d [score: %d]  \r",activedrones,activeorders,O,SCORE);
+	while((activedrones=checkdronetimes())&&(activeorders=checkordertoprocess()))
+	{
+		int sum=0,o=0;
+		printf("active drones: %d - active orders: %d/%d [score: %d]  \r",activedrones,activeorders,O,SCORE);
 
-        if(round) way=1;
+		if(round) way=1;
 
-        memset(already,0,O);
-        while(1)
-        {
-            int best,o=getbestorder(already,&best,way,1);
-            if(o==-1)
-                break;
-            else
-            {
-                ORDER*ord=&orders[o];
-                int   j,sum=0;
-                for(j=0; j<P; j++)
-                    if(ord->prodcnt[j])
-                        sum+=addrequest(o,j,ord->prodcnt[j],1);
-                already[o]=1;
-                if(sum==0)
-                    break;
-            }
-        }
+		memset(already,0,O);
+		while(1)
+		{
+			int best,o=getbestorder(already,&best,way,1);
+			if(o==-1)
+			break;
+			else
+			{
+				ORDER*ord=&orders[o];
+				int   j,sum=0;
+				for(j=0; j<P; j++)
+				if(ord->prodcnt[j])
+				sum+=addrequest(o,j,ord->prodcnt[j],1);
+				already[o]=1;
+				if(sum==0)
+				break;
+			}
+		}
 
-        for(sum=d=0; d<D; d++)
-            if(drones[d].action==action_loaded)
-                sum+=dronedeliver(d);
+		for(sum=d=0; d<D; d++)
+		if(drones[d].action==action_loaded)
+		sum+=dronedeliver(d);
 
-        round++;
-    }
-    free(already);
-    printf("active drones: %d - active orders: %d/%d [score: %d]  \n\n",activedrones,activeorders,O,SCORE);
+		round++;
+	}
+	free(already);
+	printf("active drones: %d - active orders: %d/%d [score: %d]  \n\n",activedrones,activeorders,O,SCORE);
 
-    if(!writeoutput(output))
-    {
-        printf("can't write %s\n",output);
-        return -2;
-    }
+	if(!writeoutput(output))
+	{
+		printf("can't write %s\n",output);
+		return -2;
+	}
 
-    freedata();
-    return 0;
+	freedata();
+	return 0;
 }
 
 // ---------------------------------------------------------------------------
 
 int main(int argc, char* argv[])
 {
-    printf("#hashcode 2016 - Delivert\n");
-    printf("Modena Team - Qualification Round\n\n");
+	printf("#hashcode 2016 - Delivert\n");
+	printf("Modena Team - Qualification Round\n\n");
 
 #ifdef _DEBUG
-    execute("mother_of_all_warehouses.in","mother_of_all_warehouses.out");
-    execute("busy_day.in","busy_day.out");
-    execute("redundancy.in","redundancy.out");
-    char s[64];
-    gets(s);
+	execute("mother_of_all_warehouses.in","mother_of_all_warehouses.out");
+	execute("busy_day.in","busy_day.out");
+	execute("redundancy.in","redundancy.out");
+	char s[64];
+	gets(s);
 #endif
 
-    if(argc>1)
-    {
-        return execute(argv[1],argv[2]);
-    }
-    else
-    {
-        printf("Usage: exe <file.in> <file.out>\n");
-        return -3;
-    }
+	if(argc>1)
+	{
+		return execute(argv[1],argv[2]);
+	}
+	else
+	{
+		printf("Usage: exe <file.in> <file.out>\n");
+		return -3;
+	}
 }
 
 // ---------------------------------------------------------------------------
