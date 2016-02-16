@@ -1,2 +1,2 @@
 # misc
-Small projects
+Small projects & sample code
